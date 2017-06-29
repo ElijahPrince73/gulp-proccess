@@ -8,12 +8,25 @@ var plumber = require('gulp-plumber');
 var sourcemaps = require('gulp-sourcemaps');
 var sass = require('gulp-sass');
 var babel = require('gulp-babel');
+var del =  require('del');
 
+//Handlebars Plugin
+var handlebars =  require('gulp-handlebars');
+var handlebarsLib = require('handlebars');
+var declare = require('gulp-declare');
+var wrap =  require('gulp-wrap');
+
+//Image Compession
+var imagemin = require('gulp-imagemin');
+var imageminPngquant = require('imagemin-pngquant');
+var imageminJpegRecompress = require('imagemin-jpeg-recompress');
 
 // File paths
 var DIST_PATH = 'public/dist';
 var SCRIPTS_PATH = 'public/scripts/**/*.js';
 var CSS_PATH = 'public/css/**/*.css';
+var TEMPLATES_PATH = 'templates/**/*.hbs';
+var IMAGES_PATH = 'public/images/**/*.{png,jpeg,jpg,svg,gif}';
 
 
 // Styles For SCSS
@@ -60,18 +73,54 @@ gulp.task('scripts', function () {
 // Images
 gulp.task('images', function () {
 	console.log('starting images task');
+	return gulp.src(IMAGES_PATH)
+	.pipe(imagemin(
+		[
+			imagemin.gifsicle(),
+			imagemin.jpegtran(),
+			imagemin.optipng(),
+			imagemin.svgo(),
+			imageminPngquant(),
+			imageminJpegRecompress()
+		]
+	))
+	.pipe(gulp.dest(DIST_PATH + '/images'))
 });
 
-gulp.task('default', function () {
+gulp.task('templates', function () {
+	return gulp.src(TEMPLATES_PATH)
+	.pipe(plumber(function (err) {
+		console.log('Handlebars Task Error');
+		console.log(err);
+		this.emit('end');
+	}))
+		.pipe(handlebars({
+			handlebars:handlebarsLib
+		}))
+		.pipe(wrap('Handlebars.template(<%= contents %>)'))
+		.pipe(declare({
+			namespace: 'templates',
+			noRedeclare:  true
+		}))
+		.pipe(concat('templates.js'))
+		.pipe(gulp.dest(DIST_PATH))
+		.pipe(livereload())
+})
+
+gulp.task('clean', function () {
+	return del.sync([
+		DIST_PATH
+	])
+})
+
+gulp.task('default', ['clean','templates', 'styles', 'scripts'],function () {
 	console.log('Starting default task');
+	require('./server.js');
+	livereload.listen();
 });
 
-gulp.task('watch', function () {
+gulp.task('watch', ['clean','images','default'], function () {
 	console.log('Starting watch task');
 	require('./server.js');
 	livereload.listen();
-	gulp.watch(SCRIPTS_PATH, ['scripts']);
-	gulp.watch(CSS_PATH, ['styles']);
-	gulp.watch('public/scss/**/*.scss', ['styles']);
-	gulp.watch('public/less/**/*.less', ['styles']);
 });

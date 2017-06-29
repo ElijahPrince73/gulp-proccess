@@ -13,4 +13,8 @@ class Person {
 
 var person = new Person('Andy');
 
-document.write(person.hello());
+var greetHTML = templates['greeting']({
+	message:person.hello()
+})
+
+document.write(greetHTML);
