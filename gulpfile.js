@@ -22,7 +22,7 @@ var imageminPngquant = require('imagemin-pngquant');
 var imageminJpegRecompress = require('imagemin-jpeg-recompress');
 
 // File paths
-var DIST_PATH = 'public/dist';
+var DIST_PATH = 'dist';
 var SCRIPTS_PATH = 'public/scripts/**/*.js';
 var CSS_PATH = 'public/css/**/*.css';
 var TEMPLATES_PATH = 'templates/**/*.hbs';
@@ -44,7 +44,7 @@ gulp.task('styles', function () {
 			outputStyle: 'compressed'
 		}))
 		.pipe(sourcemaps.write())
-		.pipe(gulp.dest(DIST_PATH))
+		.pipe(gulp.dest(DIST_PATH + '/css/'))
 		.pipe(livereload());
 });
 
@@ -66,7 +66,7 @@ gulp.task('scripts', function () {
 		.pipe(uglify())
 		.pipe(concat('scripts.js'))
 		.pipe(sourcemaps.write())
-		.pipe(gulp.dest(DIST_PATH))
+		.pipe(gulp.dest(DIST_PATH + '/js/'))
 		.pipe(livereload());
 });
 
@@ -84,7 +84,7 @@ gulp.task('images', function () {
 			imageminJpegRecompress()
 		]
 	))
-	.pipe(gulp.dest(DIST_PATH + '/images'))
+	.pipe(gulp.dest(DIST_PATH + '/images/'))
 });
 
 gulp.task('templates', function () {
