@@ -9,6 +9,8 @@ var sourcemaps = require('gulp-sourcemaps');
 var sass = require('gulp-sass');
 var babel = require('gulp-babel');
 var del =  require('del');
+var rename = require('gulp-rename');
+var processhtml = require('gulp-processhtml')
 
 //Handlebars Plugin
 var handlebars =  require('gulp-handlebars');
@@ -23,7 +25,7 @@ var imageminJpegRecompress = require('imagemin-jpeg-recompress');
 
 // File paths
 var DIST_PATH = 'dist';
-var SCRIPTS_PATH = 'public/scripts/**/*.js';
+var SCRIPTS_PATH = 'public/js/**/*.js';
 var CSS_PATH = 'public/css/**/*.css';
 var TEMPLATES_PATH = 'templates/**/*.hbs';
 var IMAGES_PATH = 'public/images/**/*.{png,jpeg,jpg,svg,gif}';
@@ -44,10 +46,31 @@ gulp.task('styles', function () {
 			outputStyle: 'compressed'
 		}))
 		.pipe(sourcemaps.write())
+		.pipe(rename({suffix: ".min"}))
 		.pipe(gulp.dest(DIST_PATH + '/css/'))
 		.pipe(livereload());
 });
 
+// concatenate & minify vendor JS
+var vendorScripts = [
+  'public/js/vendor/jquery.js',
+  'public/js/vendor/bootstrap.js'
+];
+gulp.task('vendors', function() {
+  return gulp.src(vendorScripts)
+    .pipe(concat('.'))
+    .pipe(rename('vendor.js'))
+    .pipe(gulp.dest('public/js'));
+});
+
+gulp.task('vendorJSUglify', function() {
+  return gulp.src('public/js/vendor.js')
+    .pipe(concat('.'))
+    .pipe(rename('vendor.min.js'))
+    .pipe(uglify())
+    .pipe(gulp.dest('dist/js/'))
+		.pipe(livereload());
+});
 
 // Scripts
 gulp.task('scripts', function () {
@@ -66,8 +89,32 @@ gulp.task('scripts', function () {
 		.pipe(uglify())
 		.pipe(concat('scripts.js'))
 		.pipe(sourcemaps.write())
+		.pipe(rename({suffix: ".min"}))
 		.pipe(gulp.dest(DIST_PATH + '/js/'))
 		.pipe(livereload());
+});
+
+//Copy Fonts
+gulp.task('copyFonts', function() {
+  return gulp.src('public/fonts/*')
+    .pipe(gulp.dest(DIST_PATH + '/fonts/'))
+});
+
+// Processes html changing style and script tags of the production code to .min versions
+var processFiles = [
+  'public/*.html'
+];
+gulp.task('processHTML', function () {
+  return gulp.src(processFiles)
+    .pipe(processhtml({process: true}))
+    .pipe(gulp.dest('dist'))
+		.pipe(livereload())
+});
+
+gulp.task('copyHTML', function() {
+  return gulp.src('public/*.html')
+    .pipe(gulp.dest(DIST_PATH))
+		.pipe(livereload())
 });
 
 // Images
@@ -113,13 +160,13 @@ gulp.task('clean', function () {
 	])
 })
 
-gulp.task('default', ['clean','templates', 'styles', 'scripts'],function () {
+gulp.task('default', ['clean','templates', 'styles', 'scripts','vendorJSUglify','vendors', 'copyFonts','processHTML','copyHTML'],function () {
 	console.log('Starting default task');
 	require('./server.js');
 	livereload.listen();
 });
 
-gulp.task('watch', ['clean','images','default'], function () {
+gulp.task('full', ['images','default'], function () {
 	console.log('Starting watch task');
 	require('./server.js');
 	livereload.listen();
