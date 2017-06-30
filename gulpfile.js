@@ -12,11 +12,12 @@ var del =  require('del');
 var rename = require('gulp-rename');
 var processhtml = require('gulp-processhtml')
 
-//Handlebars Plugin
-var handlebars =  require('gulp-handlebars');
+
+// Handlebars plugins
+var handlebars = require('gulp-handlebars');
 var handlebarsLib = require('handlebars');
 var declare = require('gulp-declare');
-var wrap =  require('gulp-wrap');
+var wrap = require('gulp-wrap');
 
 //Image Compession
 var imagemin = require('gulp-imagemin');
@@ -30,6 +31,23 @@ var CSS_PATH = 'public/css/**/*.css';
 var TEMPLATES_PATH = 'templates/**/*.hbs';
 var IMAGES_PATH = 'public/images/**/*.{png,jpeg,jpg,svg,gif}';
 
+// Styles
+// gulp.task('css', function () {
+// 	console.log('starting styles task');
+// 	return gulp.src(['public/css/reset.css', CSS_PATH])
+// 		.pipe(plumber(function (err) {
+// 			console.log('Styles Task Error');
+// 			console.log(err);
+// 			this.emit('end');
+// 		}))
+// 		.pipe(sourcemaps.init())
+// 		.pipe(autoprefixer())
+// 		.pipe(concat('styles.css'))
+// 		.pipe(minifyCss())
+// 		.pipe(sourcemaps.write())
+// 		.pipe(gulp.dest(DIST_PATH))
+// 		.pipe(livereload());
+// });
 
 // Styles For SCSS
 gulp.task('styles', function () {
@@ -48,27 +66,6 @@ gulp.task('styles', function () {
 		.pipe(sourcemaps.write())
 		.pipe(rename({suffix: ".min"}))
 		.pipe(gulp.dest(DIST_PATH + '/css/'))
-		.pipe(livereload());
-});
-
-// concatenate & minify vendor JS
-var vendorScripts = [
-  'public/js/vendor/jquery.js',
-  'public/js/vendor/bootstrap.js'
-];
-gulp.task('vendors', function() {
-  return gulp.src(vendorScripts)
-    .pipe(concat('.'))
-    .pipe(rename('vendor.js'))
-    .pipe(gulp.dest('public/js'));
-});
-
-gulp.task('vendorJSUglify', function() {
-  return gulp.src('public/js/vendor.js')
-    .pipe(concat('.'))
-    .pipe(rename('vendor.min.js'))
-    .pipe(uglify())
-    .pipe(gulp.dest('dist/js/'))
 		.pipe(livereload());
 });
 
@@ -94,29 +91,6 @@ gulp.task('scripts', function () {
 		.pipe(livereload());
 });
 
-//Copy Fonts
-gulp.task('copyFonts', function() {
-  return gulp.src('public/fonts/*')
-    .pipe(gulp.dest(DIST_PATH + '/fonts/'))
-});
-
-// Processes html changing style and script tags of the production code to .min versions
-var processFiles = [
-  'public/*.html'
-];
-gulp.task('processHTML', function () {
-  return gulp.src(processFiles)
-    .pipe(processhtml({process: true}))
-    .pipe(gulp.dest('dist'))
-		.pipe(livereload())
-});
-
-gulp.task('copyHTML', function() {
-  return gulp.src('public/*.html')
-    .pipe(gulp.dest(DIST_PATH))
-		.pipe(livereload())
-});
-
 // Images
 gulp.task('images', function () {
 	console.log('starting images task');
@@ -136,23 +110,18 @@ gulp.task('images', function () {
 
 gulp.task('templates', function () {
 	return gulp.src(TEMPLATES_PATH)
-	.pipe(plumber(function (err) {
-		console.log('Handlebars Task Error');
-		console.log(err);
-		this.emit('end');
-	}))
 		.pipe(handlebars({
-			handlebars:handlebarsLib
+			handlebars: handlebarsLib
 		}))
 		.pipe(wrap('Handlebars.template(<%= contents %>)'))
 		.pipe(declare({
 			namespace: 'templates',
-			noRedeclare:  true
+			noRedeclare: true
 		}))
 		.pipe(concat('templates.js'))
 		.pipe(gulp.dest(DIST_PATH))
-		.pipe(livereload())
-})
+		.pipe(livereload());
+});
 
 gulp.task('clean', function () {
 	return del.sync([
@@ -160,14 +129,22 @@ gulp.task('clean', function () {
 	])
 })
 
-gulp.task('default', ['clean','templates', 'styles', 'scripts','vendorJSUglify','vendors', 'copyFonts','processHTML','copyHTML'],function () {
+gulp.task('default', ['clean','images', 'templates', 'styles', 'scripts'], function () {
 	console.log('Starting default task');
 	require('./server.js');
 	livereload.listen();
+	gulp.watch(SCRIPTS_PATH, ['scripts']);
+	gulp.watch(CSS_PATH, ['css']);
+	gulp.watch('public/scss/**/*.scss', ['styles']);
+	gulp.watch(TEMPLATES_PATH, ['templates']);
 });
 
-gulp.task('full', ['images','default'], function () {
+gulp.task('watch', ['default'], function () {
 	console.log('Starting watch task');
 	require('./server.js');
 	livereload.listen();
+	gulp.watch(SCRIPTS_PATH, ['scripts']);
+	gulp.watch(CSS_PATH, ['css']);
+	gulp.watch('public/scss/**/*.scss', ['styles']);
+	gulp.watch(TEMPLATES_PATH, ['templates']);
 });
