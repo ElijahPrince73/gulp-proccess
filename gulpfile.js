@@ -161,7 +161,7 @@ gulp.task('default', ['vendorJSCompile','vendorJSUglify','clean','copyFonts','te
 	gulp.watch(TEMPLATES_PATH, ['templates']);
 });
 
-gulp.task('watch', ['processHTML','images','default'], function () {
+gulp.task('full', ['processHTML','images','default'], function () {
 	console.log('Starting watch task');
 	require('./server.js');
 	livereload.listen();
